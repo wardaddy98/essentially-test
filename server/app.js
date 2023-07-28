@@ -4,6 +4,8 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require("body-parser");
 const axios = require("axios");
+const { getStockDataUrl } = require('./constants');
+
 
 const app = express();
 
@@ -26,9 +28,44 @@ app.use(bodyParser.json());
 
 app.enable('trust proxy');
 
-app.post('/api/fetchStockData', (req, res) => {
-    // YOUR CODE GOES HERE, PLEASE DO NOT EDIT ANYTHING OUTSIDE THIS FUNCTION
-    res.sendStatus(200);
+app.post('/api/fetchStockData', async (req, res) => {
+
+    try {
+        const { date, stockSymbol } = req.body;
+
+        if (!date || !stockSymbol) {
+            return res.status(401).json("Missing details!");
+        }
+
+        const result = await axios.get(getStockDataUrl(stockSymbol, date))
+
+
+        const stockData = result.data.results[0];
+
+        const response = {
+            stock: result.data.ticker,
+            details:{
+                open: stockData?.o,
+                low: stockData?.l,
+                close: stockData?.c,
+                volume: stockData?.v,
+                high: stockData?.h,
+            }
+        }
+        return res.status(200).json({
+            status: 200,
+            message: 'Stock Data Loaded successfully!',
+            body: response
+        })
+
+    } catch (err) {
+        console.log(err)
+    }
+
+
+
+
+
 });
 
 const port = process.env.PORT || 5000;
